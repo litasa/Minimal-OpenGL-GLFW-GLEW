@@ -22,8 +22,9 @@ project "Minimal Example" -- Name of project
     language "C++"
     location "project/Minimal Example" -- location of vcxproj file
     targetdir "bin/%{cfg.buildcfg}/%{cfg.architecture}" -- .exe files is in bin/(debug or release)/(x86 or x64)/
-
-    files { "./src/Minimal Example/**.h", "./src/Minimal Example/**.cpp" } --location of source files to include
+    --location of source files to include. Here we include All files ending with .h and .cpp
+    --in the folder Minimal Example even files in subfolders.
+    files { "./src/Minimal Example/**.h", "./src/Minimal Example/**.cpp" } 
 
     --Include directories
     includedirs {
