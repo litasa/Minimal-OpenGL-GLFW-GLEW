@@ -16,7 +16,6 @@ const unsigned int SCR_HEIGHT = 600;
 
 int main()
 {
-	glewInit();
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
@@ -35,7 +34,12 @@ int main()
 		return -1;
 	}
 	glfwMakeContextCurrent(window);
+	//init glew after the context have been made
+	glewInit();
+
+
 	glfwSetFramebufferSizeCallback(window, framebuffer_size_callback);
+
 
 	// render loop
 	// -----------
