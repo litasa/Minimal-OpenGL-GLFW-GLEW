@@ -9,6 +9,8 @@
 #include <GL\glew.h>
 #include <GLFW/glfw3.h>
 
+#include <chrono>
+#include <vector>
 #include <iostream>
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
@@ -18,8 +20,59 @@ void processInput(GLFWwindow *window);
 const unsigned int SCR_WIDTH = 800;
 const unsigned int SCR_HEIGHT = 600;
 
+bool debug = true;
+std::chrono::steady_clock::time_point timeCurrent;
+std::chrono::steady_clock::time_point timePastSecond;
+std::chrono::duration<double, std::milli> delta;
+float frames = 0.f;
+
+struct Ball {
+	ImVec2 posCenter;
+	float radius;
+	ImVec2 velocity;
+	uint32_t color;
+
+	Ball(ImVec2 cen, float r, ImVec2 v, uint32_t col = 0xffff00ff) {
+		posCenter = cen;
+		radius = r;
+		velocity = v;
+		color = col;
+	}
+
+	void move(ImVec2 dist) {
+		posCenter.x += dist.x;
+		posCenter.y += dist.y;
+	}
+
+	void update(float timeDelta) {
+		ImVec2 moveDist = { timeDelta * velocity.x, timeDelta * velocity.y };
+		move(moveDist);
+	}
+};
+
+std::vector<Ball*> balls;
+
+void showBallsWindow() {
+	ImGui::Begin("balls");
+	for (Ball* ball : balls) {
+		ImVec2 posWindowOffset = ImGui::GetWindowPos();
+		ImVec2 posBallOffset = { ball->posCenter.x + posWindowOffset.x, ball->posCenter.y + posWindowOffset.y };
+		ImGui::GetWindowDrawList()->AddCircleFilled(posBallOffset, ball->radius, ball->color);
+	}
+
+	ImGui::End();
+}
+
+void showDebugWindow() {
+	ImGui::Begin("debug");
+	ImGui::Text("Frames: %d", frames);
+	ImGui::End();
+}
+
 int main()
 {
+	balls.push_back(new Ball({ 50, 50 }, 8, { 2, -2 }));
+
 	// glfw: initialize and configure
 	// ------------------------------
 	glfwInit();
@@ -31,7 +84,7 @@ int main()
 	// glfw window creation
 	// --------------------
 	GLFWwindow* window = glfwCreateWindow(SCR_WIDTH, SCR_HEIGHT, "LearnOpenGL", NULL, NULL);
-	if (window == NULL)	{
+	if (window == NULL) {
 		std::cout << "Failed to create GLFW window" << std::endl;
 		glfwTerminate();
 		return -1;
@@ -57,6 +110,7 @@ int main()
 
 	// render loop
 	// -----------
+	timePastSecond = timeCurrent = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		// input
@@ -67,6 +121,8 @@ int main()
 		ImGui_ImplOpenGL3_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+		showBallsWindow();
+		if (debug) showDebugWindow();
 		ImGui::ShowDemoWindow(); // Show demo window! :)
 
 		// render
@@ -83,9 +139,23 @@ int main()
 		ImGui::UpdatePlatformWindows();
 		ImGui::RenderPlatformWindowsDefault();
 
+	
+		timeCurrent = std::chrono::steady_clock::now();
+		delta = timeCurrent - timePastSecond;
+		frames = 1.f / delta.count();
+		timePastSecond = timeCurrent;
+
+		for (auto ball : balls) {
+			ball->update(delta.count() / 1000);
+		}
+
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
 		glfwSwapBuffers(window);
+	}
+
+	for (Ball* ball : balls) {
+		delete ball;
 	}
 
 	// glfw: terminate, clearing all previously allocated GLFW resources.
