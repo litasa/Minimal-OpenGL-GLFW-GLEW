@@ -24,12 +24,21 @@ project "Minimal Example" -- Name of project
     targetdir "bin/%{cfg.buildcfg}/%{cfg.architecture}" -- .exe files is in bin/(debug or release)/(x86 or x64)/
     --location of source files to include. Here we include All files ending with .h and .cpp
     --in the folder Minimal Example even files in subfolders.
-    files { "./src/Minimal Example/**.h", "./src/Minimal Example/**.cpp" } 
+    files { 
+	    "./src/Minimal Example/**.h", 
+	    "./src/Minimal Example/**.cpp",
+	    "./lib/ImGui/*.cpp",
+	    "./lib/ImGui/*.h",
+	    "./lib/ImGui/backends/imgui_impl_glfw.*",
+	    "./lib/ImGui/backends/imgui_impl_opengl3.*"
+    } 
 
     --Include directories
     includedirs {
         "./dependencies/glfw-3.2.1/include",
-        "./dependencies/glew-2.0.0/include"
+        "./dependencies/glew-2.0.0/include",
+	"./lib/ImGui",
+	"./lib/ImGui/backends"
     }
 
     --libraries and links
