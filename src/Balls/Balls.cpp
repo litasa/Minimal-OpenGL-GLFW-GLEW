@@ -13,6 +13,8 @@
 #include <vector>
 #include <iostream>
 
+#define GRAVITAIONAL_FORCE 12.f
+
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
 
@@ -45,6 +47,9 @@ struct Ball {
 	}
 
 	void update(float timeDelta) {
+		//gravity 
+		velocity.y += timeDelta * GRAVITAIONAL_FORCE;
+
 		ImVec2 moveDist = { timeDelta * velocity.x, timeDelta * velocity.y };
 		move(moveDist);
 	}
@@ -58,6 +63,10 @@ void showBallsWindow() {
 		ImVec2 posWindowOffset = ImGui::GetWindowPos();
 		ImVec2 posBallOffset = { ball->posCenter.x + posWindowOffset.x, ball->posCenter.y + posWindowOffset.y };
 		ImGui::GetWindowDrawList()->AddCircleFilled(posBallOffset, ball->radius, ball->color);
+		if (ball->posCenter.y + ball->radius > ImGui::GetWindowHeight()) {
+			ball->velocity.y *= -1;
+			ball->posCenter.y = ImGui::GetWindowHeight() - ball->radius;
+		}
 	}
 
 	ImGui::End();
@@ -123,7 +132,6 @@ int main()
 		ImGui::NewFrame();
 		showBallsWindow();
 		if (debug) showDebugWindow();
-		ImGui::ShowDemoWindow(); // Show demo window! :)
 
 		// render
 		// ------
