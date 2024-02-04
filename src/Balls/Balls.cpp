@@ -13,7 +13,7 @@
 #include <vector>
 #include <iostream>
 
-#define GRAVITAIONAL_FORCE 12.f
+#define GRAVITAIONAL_FORCE 32
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -64,8 +64,20 @@ void showBallsWindow() {
 		ImVec2 posBallOffset = { ball->posCenter.x + posWindowOffset.x, ball->posCenter.y + posWindowOffset.y };
 		ImGui::GetWindowDrawList()->AddCircleFilled(posBallOffset, ball->radius, ball->color);
 		if (ball->posCenter.y + ball->radius > ImGui::GetWindowHeight()) {
-			ball->velocity.y *= -1;
+			ball->velocity.y *= -.9;
 			ball->posCenter.y = ImGui::GetWindowHeight() - ball->radius;
+		}
+		if (ball->posCenter.y - ball->radius < 0) {
+			ball->velocity.y *= -.9;
+			ball->posCenter.y = ball->radius;
+		}
+		if (ball->posCenter.x + ball->radius > ImGui::GetWindowWidth()) {
+			ball->velocity.x *= -.9;
+			ball->posCenter.x = ImGui::GetWindowWidth() - ball->radius;
+		}
+		if (ball->posCenter.x - ball->radius < 0) {
+			ball->velocity.x *= -.9;
+			ball->posCenter.x = ball->radius;
 		}
 	}
 
@@ -80,7 +92,7 @@ void showDebugWindow() {
 
 int main()
 {
-	balls.push_back(new Ball({ 50, 50 }, 8, { 2, -2 }));
+	balls.push_back(new Ball({ 50, 50 }, 8, { 22, -2 }));
 
 	// glfw: initialize and configure
 	// ------------------------------
