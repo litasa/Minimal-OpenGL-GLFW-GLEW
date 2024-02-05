@@ -13,7 +13,11 @@
 #include <vector>
 #include <iostream>
 
-#define GRAVITAIONAL_FORCE 32
+#define GRAVITAIONAL_FORCE 96
+#define REFRACTORY_TIME 125
+#define BALL_SIZE 8
+
+#define FPS_60_FRAME_TIME 1.f / 60.f
 
 void framebuffer_size_callback(GLFWwindow* window, int width, int height);
 void processInput(GLFWwindow *window);
@@ -24,9 +28,10 @@ const unsigned int SCR_HEIGHT = 600;
 
 bool debug = true;
 std::chrono::steady_clock::time_point timeCurrent;
-std::chrono::steady_clock::time_point timePastSecond;
+std::chrono::steady_clock::time_point timeLastFrame;
 std::chrono::duration<double, std::milli> delta;
 float frames = 0.f;
+float deltaTime = 0.f;
 
 struct Ball {
 	ImVec2 posCenter;
@@ -57,6 +62,32 @@ struct Ball {
 
 std::vector<Ball*> balls;
 
+class BallShooter {
+	ImVec2 position;
+	ImVec2 exitVelocity;
+
+	float timeSinceLastShot = REFRACTORY_TIME;
+
+	void shoot() {
+		balls.push_back(new Ball(position, BALL_SIZE, exitVelocity));
+	}
+public:
+	BallShooter(ImVec2 p, ImVec2 dir, float mag) {
+		position = p;
+		exitVelocity = ImVec2(mag * dir.x, mag * dir.y);
+	}
+
+	void update(float timeDelta) {
+		//if (timeDelta > FPS_60_FRAME_TIME) return;
+		timeSinceLastShot += timeDelta;
+		if (timeSinceLastShot > REFRACTORY_TIME) {
+			shoot();
+			timeSinceLastShot = 0.f;
+		}
+	}
+};
+
+
 void showBallsWindow() {
 	ImGui::Begin("balls");
 	for (Ball* ball : balls) {
@@ -86,13 +117,31 @@ void showBallsWindow() {
 
 void showDebugWindow() {
 	ImGui::Begin("debug");
-	ImGui::Text("Frames: %d", frames);
+	ImGui::Text("Frames: %d", (int)frames);
+	ImGui::Text("Objects: %d", balls.size());
+	ImGui::Text("Time Delta: %f", deltaTime);
 	ImGui::End();
+}
+
+void handleCollisions() {
+	for (Ball* ball1 : balls) {
+		for (Ball* ball2 : balls) {
+			if (ball1 != ball2) {
+				float dx = ball2->posCenter.x - ball1->posCenter.x;
+				float dy = ball2->posCenter.y - ball1->posCenter.y;
+				float dist = sqrt(dx * dx + dy * dy);
+				if (dist < ball1->radius + ball2->radius) {
+					ball1->move({ dx/-2, dy/-2 });
+					ball2->move({ dx / 2, dy / 2 });
+				}
+			}
+		}
+	}
 }
 
 int main()
 {
-	balls.push_back(new Ball({ 50, 50 }, 8, { 22, -2 }));
+	BallShooter* shooter = new BallShooter({ 50, 50 }, { 1, 0 }, 500);
 
 	// glfw: initialize and configure
 	// ------------------------------
@@ -131,7 +180,7 @@ int main()
 
 	// render loop
 	// -----------
-	timePastSecond = timeCurrent = std::chrono::steady_clock::now();
+	timeLastFrame = timeCurrent = std::chrono::steady_clock::now();
 	while (!glfwWindowShouldClose(window)) {
 		glfwPollEvents();
 		// input
@@ -161,13 +210,19 @@ int main()
 
 	
 		timeCurrent = std::chrono::steady_clock::now();
-		delta = timeCurrent - timePastSecond;
-		frames = 1.f / delta.count();
-		timePastSecond = timeCurrent;
+		delta = timeCurrent - timeLastFrame;
+		deltaTime = delta.count();
+		frames = 1.f / deltaTime;
+
+		timeLastFrame = timeCurrent;
+
+		shooter->update(deltaTime);
 
 		for (auto ball : balls) {
-			ball->update(delta.count() / 1000);
+			ball->update(deltaTime / 1000);
 		}
+
+		handleCollisions();
 
 		// glfw: swap buffers and poll IO events (keys pressed/released, mouse moved etc.)
 		// -------------------------------------------------------------------------------
